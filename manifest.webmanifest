@@ -1,0 +1,26 @@
+﻿{
+  "id": "./",
+  "name": "AtenciÃ³n de Pacientes",
+  "short_name": "AtenciÃ³n",
+  "description": "Registro offline de atenciÃ³n de pacientes con sincronizaciÃ³n en la nube",
+  "start_url": "./index.html",
+  "scope": "./",
+  "display": "standalone",
+  "display_override": ["standalone", "minimal-ui"],
+  "orientation": "portrait",
+  "background_color": "#f2f4f7",
+  "theme_color": "#0b7285",
+  "lang": "es",
+  "dir": "ltr",
+  "categories": ["medical", "productivity"],
+  "prefer_related_applications": false,
+  "shortcuts": [
+    { "name": "Nueva atenciÃ³n", "url": "./index.html" }
+  ],
+  "icons": [
+    { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "icons/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}
+

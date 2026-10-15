@@ -1,0 +1,280 @@
+﻿<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+  <meta name="theme-color" content="#0b7285">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="AtenciÃ³n Pacientes">
+  <link rel="manifest" href="manifest.webmanifest">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="icon" href="icons/icon-192.png">
+  <link rel="stylesheet" href="css/styles.css">
+  <title>Sistema de Comando de Eventos Masivos</title>
+</head>
+<body>
+
+  <div id="loginView" class="login-view">
+    <div class="login-card">
+      <div class="login-logo"><img src="icons/logo.jpeg" alt="SAFE MEDICAL"></div>
+      <h1 class="brand-name">SAFE MEDICAL</h1>
+      <p class="login-app-sub" style="text-align:center">Sistema de Comando de Eventos Masivos</p>
+      <p class="login-sub" style="text-align:center">Registro de atenciÃ³n prehospitalaria</p>
+
+      <label class="field">
+        <span>Correo</span>
+        <input type="email" id="loginEmail" autocomplete="username" placeholder="usuario@correo.cl">
+      </label>
+      <label class="field">
+        <span>ContraseÃ±a</span>
+        <input type="password" id="loginPassword" autocomplete="current-password" placeholder="â€¢â€¢â€¢â€¢â€¢â€¢â€¢â€¢">
+      </label>
+
+      <button class="btn btn-primary" id="btnLogin">INGRESAR</button>
+      <button class="btn btn-ghost" id="btnSignup">CREAR CUENTA</button>
+      <div id="loginMsg" class="login-msg"></div>
+      <div class="login-offline" id="loginOffline">Sin conexiÃ³n. Inicie sesiÃ³n una vez con internet; luego podrÃ¡ usar la app offline.</div>
+
+      <details class="install-help">
+        <summary>Â¿CÃ³mo instalar la app en el celular?</summary>
+        <div class="install-body">
+          <p><strong>iPhone:</strong> Ã¡brala en <em>Safari</em> â†’ botÃ³n <em>Compartir</em> â†’ <em>AÃ±adir a pantalla de inicio</em> â†’ <em>AÃ±adir</em>.</p>
+          <p><strong>Android:</strong> Ã¡brala en <em>Chrome</em> â†’ menÃº <em>â‹®</em> â†’ <em>Instalar aplicaciÃ³n</em> (o <em>AÃ±adir a pantalla de inicio</em>).</p>
+          <p class="install-note">Queda como una app a pantalla completa y funciona sin internet.</p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <div id="appView" class="app-view hidden">
+    <header class="topbar">
+      <div class="topbar-row1">
+        <div class="topbar-brand">
+          <img class="topbar-logo" src="icons/logo.jpeg" alt="SAFE MEDICAL">
+          <div class="topbar-titles">
+            <div class="topbar-title">SAFE MEDICAL</div>
+            <div class="topbar-sub">Sistema de Comando de Eventos Masivos</div>
+          </div>
+        </div>
+        <div class="topbar-right">
+          <span id="connBadge" class="badge badge-offline">Offline</span>
+          <span id="pendingBadge" class="badge badge-pending hidden">0 pendientes</span>
+        </div>
+      </div>
+      <div class="topbar-user">
+        <span id="userEmail" class="user-email"></span>
+        <span id="roleBadge" class="badge badge-role">â€”</span>
+        <button class="btn-mini" id="btnLogout">Salir</button>
+      </div>
+    </header>
+
+    <main class="container">
+
+      <div id="syncBanner" class="sync-banner hidden">
+        <span id="syncBannerText"></span>
+        <button class="btn-mini" id="btnSyncNow">Sincronizar ahora</button>
+      </div>
+
+      <div id="editBanner" class="edit-banner hidden">
+        <span id="editBannerText"></span>
+        <button class="btn-mini" id="btnCancelEdit">Nuevo</button>
+      </div>
+
+      <section class="card">
+        <h2 class="card-title">Sistema de Comando de Eventos Masivos</h2>
+        <label class="field">
+          <span>ID / Folio del paciente</span>
+          <input type="text" id="folio" readonly placeholder="AutomÃ¡tico">
+        </label>
+        <div class="row">
+          <label class="field">
+            <span>Fecha</span>
+            <input type="date" id="fecha" readonly>
+          </label>
+          <label class="field">
+            <span>Hora</span>
+            <input type="time" id="hora" readonly>
+          </label>
+        </div>
+        <label class="field">
+          <span>QuiÃ©n atiende</span>
+        </label>
+        <div class="checkbox-group" id="cargoAtiendeGroup">
+          <label><input type="checkbox" value="MÃ‰DICO"> MÃ‰DICO</label>
+          <label><input type="checkbox" value="ENFERMERO(A)"> ENFERMERO(A)</label>
+          <label><input type="checkbox" value="TENS"> TENS</label>
+          <label><input type="checkbox" value="RESCATISTA"> RESCATISTA</label>
+          <label><input type="checkbox" value="PSICOLOGO(A)"> PSICOLOGO(A)</label>
+          <label><input type="checkbox" value="KINESIÃ“LOGO(A)"> KINESIÃ“LOGO(A)</label>
+        </div>
+        <label class="field">
+          <span>Nombre de quien atiende</span>
+          <input type="text" id="quienAtiende" placeholder="Nombre de quien atiende">
+        </label>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Datos del lesionado</h2>
+        <label class="field">
+          <span>Nombre</span>
+          <input type="text" id="nombre" placeholder="Nombre completo">
+        </label>
+        <div class="row">
+          <label class="field">
+            <span>RUN</span>
+            <input type="text" id="run" placeholder="12.345.678-9">
+          </label>
+          <label class="field field-small">
+            <span>Edad</span>
+            <input type="number" id="edad" min="0" max="120" placeholder="aÃ±os">
+          </label>
+        </div>
+        <label class="field">
+          <span>Domicilio</span>
+          <input type="text" id="domicilio" placeholder="Calle, nÃºmero, comuna">
+        </label>
+        <label class="field">
+          <span>Fono</span>
+          <input type="tel" id="fono" placeholder="+56 9 ...">
+        </label>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Signos vitales</h2>
+        <p class="hint">Â¿Registrar signos vitales?</p>
+        <div class="check-row">
+          <label class="check-inline"><input type="radio" name="svOn" id="controlSi" value="SI"> SI</label>
+          <label class="check-inline"><input type="radio" name="svOn" id="controlNo" value="NO"> NO</label>
+        </div>
+        <div id="controlContainer" class="hidden">
+          <div class="card-head">
+            <span class="subtitle">Tomas de signos vitales</span>
+            <button class="btn-add" id="btnAddSigno" title="Agregar toma de signos vitales">+</button>
+          </div>
+          <div id="signosList" class="dynamic-list"></div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Enfermedades de base</h2>
+        <textarea id="enfermedades" rows="4" placeholder="PatologÃ­as, alergias, etc."></textarea>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Medicamentos</h2>
+        <textarea id="medicamentos" rows="4" placeholder="Medicamentos de uso habitual"></textarea>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Motivo de la consulta</h2>
+        <textarea id="motivoConsulta" rows="4" placeholder="Motivo de la consulta"></textarea>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Tratamiento</h2>
+        <textarea id="tratamiento" rows="4" placeholder="Tratamiento indicado"></textarea>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Medicamentos administrados</h2>
+        <textarea id="medicamentosAdmin" rows="4" placeholder="Medicamentos administrados durante la atenciÃ³n"></textarea>
+      </section>
+
+      <section class="card">
+        <h2 class="card-title">Traslado</h2>
+        <p class="hint">Â¿Se realizÃ³ traslado?</p>
+        <div class="check-row">
+          <label class="check-inline"><input type="radio" name="trasladoOn" id="trasladoSi" value="SI"> SI</label>
+          <label class="check-inline"><input type="radio" name="trasladoOn" id="trasladoNo" value="NO"> NO</label>
+        </div>
+        <div id="trasladoContainer" class="hidden">
+          <label class="field">
+            <span>Lugar donde fue trasladado</span>
+            <textarea id="trasladoLugar" rows="3" placeholder="Hospital, centro asistencial, domicilio, etc."></textarea>
+          </label>
+          <label class="field">
+            <span>Ambulancia</span>
+            <textarea id="trasladoAmbulancia" rows="2" placeholder="IdentificaciÃ³n / mÃ³vil de la ambulancia"></textarea>
+          </label>
+          <label class="field">
+            <span>Personal a cargo</span>
+            <textarea id="trasladoPersonal" rows="2" placeholder="Nombre y cargo del personal a cargo"></textarea>
+          </label>
+        </div>
+      </section>
+
+      <div class="actions">
+        <button class="btn btn-whatsapp" id="btnWhatsapp">ENVIAR POR WHATSAPP</button>
+        <button class="btn btn-pdf" id="btnPdf">GENERAR PDF</button>
+        <button class="btn btn-primary" id="btnGuardar">GUARDAR Y SINCRONIZAR</button>
+        <button class="btn btn-new" id="btnNuevoPaciente">NUEVO PACIENTE</button>
+        <button class="btn btn-danger" id="btnLimpiar">LIMPIAR FORMULARIO</button>
+      </div>
+
+      <section class="card" id="realtimeCard">
+        <div class="card-head">
+          <h2 class="card-title">Registros en lÃ­nea</h2>
+          <span class="live-dot" id="liveDot"></span>
+        </div>
+        <p class="hint">Atenciones recibidas en tiempo real desde todos los dispositivos.</p>
+        <div id="realtimeList" class="realtime-list">
+          <div class="empty">Sin registros todavÃ­a.</div>
+        </div>
+      </section>
+
+      <section class="card hidden" id="reportesCard">
+        <h2 class="card-title">Reportes</h2>
+        <p class="hint">Reporte general: total de pacientes atendidos y listado completo.</p>
+        <div class="actions">
+          <button class="btn btn-pdf" id="btnPdfGlobal">GENERAR PDF GLOBAL</button>
+          <button class="btn btn-ghost" id="btnBackupJson">RESPALDO COMPLETO (JSON)</button>
+          <button class="btn btn-ghost" id="btnBackupCsv">RESPALDO CSV</button>
+        </div>
+      </section>
+
+      <section class="card hidden" id="usuariosCard">
+        <h2 class="card-title">Usuarios</h2>
+        <p class="hint">Crear usuarios y asignar roles.</p>
+        <div class="row">
+          <label class="field">
+            <span>Nombre</span>
+            <input type="text" id="uNombre" placeholder="Nombre completo">
+          </label>
+          <label class="field">
+            <span>Rol</span>
+            <select id="uRol">
+              <option value="RESCATISTA">RESCATISTA</option>
+              <option value="TENS">TENS</option>
+              <option value="ENFERMERIA">ENFERMERA(O)</option>
+              <option value="MEDICO">MÃ‰DICO</option>
+              <option value="ADMINISTRADOR">ADMINISTRADOR</option>
+            </select>
+          </label>
+        </div>
+        <label class="field">
+          <span>Correo</span>
+          <input type="email" id="uEmail" placeholder="usuario@correo.cl">
+        </label>
+        <label class="field">
+          <span>ContraseÃ±a</span>
+          <input type="text" id="uPassword" placeholder="mÃ­nimo 6 caracteres">
+        </label>
+        <button class="btn btn-primary" id="btnCrearUsuario">CREAR USUARIO</button>
+        <div id="usuariosList" class="realtime-list" style="margin-top:14px"></div>
+      </section>
+
+      <div class="footer-space"></div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="lib/supabase.js"></script>
+  <script src="lib/jspdf.umd.min.js"></script>
+  <script src="js/config.js"></script>
+  <script src="js/logo-data.js"></script>
+  <script src="js/app.scem.js"></script>
+</body>
+</html>
+
