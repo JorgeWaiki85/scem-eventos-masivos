@@ -6,7 +6,7 @@ const ASSETS = [
   "./css/styles.css",
   "./js/config.js",
   "./js/logo-data.js",
-  "./js/app.js",
+  "./js/app.scem.js",
   "./lib/supabase.js",
   "./lib/jspdf.umd.min.js",
   "./icons/icon-192.png",
