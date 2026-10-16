@@ -238,8 +238,6 @@
     rb.className = "badge badge-role badge-rol-" + r;
     $$("[data-admin]").forEach(function (el) { el.classList.toggle("hidden", !esAdmin()); });
     $$("[data-ver]").forEach(function (el) { el.classList.toggle("hidden", !puedeVerTodo()); });
-    const pCard = $("pRealtimeList") ? $("pRealtimeList").closest(".card") : null;
-    if (pCard) pCard.classList.toggle("hidden", !puedeVerTodo());
     if (esAdmin()) { loadUsuarios(); loadReportes(); }
   }
 
@@ -252,7 +250,7 @@
     if (name === "realtime") loadRealtime();
     if (name === "lista") loadIncidentes();
     if (name === "reportes") loadReportes();
-    if (name === "pacientes") { loadRealtimePac(); }
+    if (name === "pacientes") { loadRealtimePac(); cargarSelectorEventos(); }
     try { window.scrollTo({ top: 0, behavior: "smooth" }); } catch (e) { window.scrollTo(0, 0); }
   }
 
@@ -814,11 +812,21 @@
       html += "</tbody></table></div>";
     }
 
+    const pacientes = Array.isArray(inc._pacientes) ? inc._pacientes : [];
+    if (pacientes.length) {
+      html += "<h3>Pacientes atendidos (" + pacientes.length + ")</h3><div class=\"tabla-wrap\"><table class=\"tabla\"><thead><tr><th>#</th><th>Folio</th><th>Nombre</th><th>RUN</th><th>Edad</th><th>Fecha/Hora</th><th>Quién atiende</th></tr></thead><tbody>";
+      pacientes.forEach(function (a, i) {
+        html += "<tr><td>" + (i + 1) + "</td><td>" + esc(a.folio != null ? "#" + a.folio : "") + "</td><td>" + esc(a.nombre) + "</td><td>" + esc(a.run) + "</td><td>" + esc(a.edad) + "</td><td>" + esc(fmtFechaHora(a.fecha, a.hora)) + "</td><td>" + esc([a.cargo_atiende, a.quien_atiende].filter(Boolean).join(" · ")) + "</td></tr>";
+      });
+      html += "</tbody></table></div>";
+    }
+
     return html;
   }
 
-  function mostrarInforme(inc) {
+  async function mostrarInforme(inc) {
     informeInc = inc;
+    inc._pacientes = await cargarPacientesEvento(inc.id);
     $("informeContenido").innerHTML = buildInformeHTML(inc);
     showTab("informe");
   }
@@ -832,6 +840,7 @@
   function informeTexto(inc) {
     const personal = inc.personal || [], recursos = inc.recursos || [], equipos = inc.equipos || [];
     const puestos = Array.isArray(inc.puesto_medico) ? inc.puesto_medico : [];
+    const pacientes = Array.isArray(inc._pacientes) ? inc._pacientes : [];
     let out = "*SAFE MEDICAL*\n*Informe de evento* " + (inc.folio != null ? "#" + inc.folio : "") + "\n\n";
     const line = function (k, v) { if (v) out += "*" + k + ":* " + v + "\n"; };
     out += "*Identificación*\n";
@@ -872,6 +881,12 @@
       puestos.forEach(function (p, i) {
         const f = nombresFuncionarios(p.funcionarios, personal).join(", ");
         out += "- Puesto " + (i + 1) + ": " + [p.ubicacion, p.responsable, f && ("Funcionarios: " + f)].filter(Boolean).join(" · ") + "\n";
+      });
+    }
+    if (pacientes.length) {
+      out += "\n*Pacientes atendidos (" + pacientes.length + ")*\n";
+      pacientes.forEach(function (a) {
+        out += "- " + [a.folio != null ? "#" + a.folio : "", a.nombre, a.run, a.edad, a.cargo_atiende, a.quien_atiende].filter(Boolean).join(" · ") + "\n";
       });
     }
     return out.trim();
@@ -950,6 +965,7 @@
 
     const personal = inc.personal || [], recursos = inc.recursos || [], equipos = inc.equipos || [];
     const puestos = Array.isArray(inc.puesto_medico) ? inc.puesto_medico : [];
+    const pacientes = Array.isArray(inc._pacientes) ? inc._pacientes : [];
     if (personal.length) {
       titulo("Personal desplegado (" + personal.length + ")");
       tabla(["#", "Nombre", "RUN", "Cargo", "Contacto", "SIS/RCM"], personal.map(function (p, i) { return [i + 1, p.nombre, p.run, CARGO_LABEL[p.cargo] || p.cargo, p.contacto, personalExtra(p)]; }), [7, 42, 28, 32, 30, 27]);
@@ -984,6 +1000,11 @@
       });
     }
 
+    if (pacientes.length) {
+      titulo("Pacientes atendidos (" + pacientes.length + ")");
+      tabla(["#", "Folio", "Nombre", "RUN", "Edad", "Quién atiende"], pacientes.map(function (a, i) { return [i + 1, a.folio != null ? "#" + a.folio : "", a.nombre, a.run, a.edad, [a.cargo_atiende, a.quien_atiende].filter(Boolean).join(" · ")]; }), [7, 16, 48, 30, 12, 43]);
+    }
+
     const pages = doc.getNumberOfPages();
     for (let p = 1; p <= pages; p++) {
       doc.setPage(p); doc.setFont("helvetica", "normal"); doc.setFontSize(8); doc.setTextColor(120, 120, 120);
@@ -1006,7 +1027,7 @@
         .on("postgres_changes", { event: "*", schema: "public", table: "incidentes" }, function () { loadRealtime(); loadIncidentes(); })
         .subscribe(function (s) { $("liveDot").classList.toggle("on", s === "SUBSCRIBED"); });
     }
-    if (puedeVerTodo() && !pacChannel) {
+    if (!pacChannel) {
       pacChannel = sb.channel("atenciones-live")
         .on("postgres_changes", { event: "*", schema: "public", table: "atenciones" }, function () { loadRealtimePac(); })
         .subscribe(function (s) { $("pLiveDot").classList.toggle("on", s === "SUBSCRIBED"); });
@@ -1161,6 +1182,57 @@
     $$("#pCargoGroup input").forEach(function (c) { c.checked = set.indexOf(c.value) >= 0; });
   }
 
+  /* ---------------- Vínculo evento <-> atención de pacientes ---------------- */
+  async function opcionesEventos() {
+    const mapa = {};
+    try {
+      const local = await idbAll(STORE_EV);
+      local.forEach(function (r) {
+        if (r && r.inc && r.inc.id) mapa[r.inc.id] = { id: r.inc.id, folio: r.folio, tipo: r.inc.tipo, estado: r.inc.estado };
+      });
+    } catch (e) {}
+    if (sb && navigator.onLine) {
+      try {
+        const res = await sb.from("incidentes").select("id, folio, tipo, estado").order("folio", { ascending: false }).limit(500);
+        if (!res.error && res.data) res.data.forEach(function (r) { mapa[r.id] = r; });
+      } catch (e) {}
+    }
+    return Object.keys(mapa).map(function (k) { return mapa[k]; }).sort(function (a, b) { return (b.folio || 0) - (a.folio || 0); });
+  }
+
+  async function cargarSelectorEventos(seleccion) {
+    const sel = $("pEvento");
+    if (!sel) return;
+    const actual = (seleccion != null) ? seleccion : sel.value;
+    const lista = await opcionesEventos();
+    let html = '<option value="">Sin evento</option>';
+    lista.forEach(function (e) {
+      const label = (e.folio != null ? "#" + e.folio + " · " : "") + (e.tipo || "(sin tipo)") + (e.estado ? " · " + e.estado : "");
+      html += '<option value="' + esc(e.id) + '">' + esc(label) + "</option>";
+    });
+    sel.innerHTML = html;
+    sel.value = actual || "";
+    if (sel.value !== (actual || "")) sel.value = "";
+  }
+
+  async function cargarPacientesEvento(incId) {
+    if (!incId) return [];
+    if (sb && navigator.onLine) {
+      try {
+        const res = await sb.from("atenciones")
+          .select("id, folio, nombre, run, edad, fecha, hora, cargo_atiende, quien_atiende, traslado, creado_cliente")
+          .eq("incidente_id", incId).order("folio", { ascending: true });
+        if (!res.error) return res.data || [];
+      } catch (e) {}
+    }
+    try {
+      const local = await idbAll(STORE_PAC);
+      return local.filter(function (r) { return r.atencion && r.atencion.incidente_id === incId; })
+        .map(function (r) { return Object.assign({}, r.atencion, { folio: r.folio }); })
+        .sort(function (a, b) { return (a.folio == null ? Infinity : a.folio) - (b.folio == null ? Infinity : b.folio); });
+    } catch (e) { return []; }
+  }
+
   function pCollect() {
     const traslado = $("pTrasladoSi").checked ? "SI" : ($("pTrasladoNo").checked ? "NO" : "");
     const atencion = {
@@ -1176,6 +1248,7 @@
       traslado_lugar: traslado === "SI" ? val("pTrasladoLugar") : "",
       traslado_ambulancia: traslado === "SI" ? val("pTrasladoAmbulancia") : "",
       traslado_personal: traslado === "SI" ? val("pTrasladoPersonal") : "",
+      incidente_id: val("pEvento") || null,
       dispositivo: cfg.DISPOSITIVO || ""
     };
     const signos = [];
@@ -1202,6 +1275,7 @@
     setVal("pHora", nowHM());
     ["pQuienAtiende", "pNombre", "pRun", "pEdad", "pDomicilio", "pFono", "pEnfermedades", "pMedicamentos", "pMotivoConsulta", "pTratamiento", "pMedicamentosAdmin", "pTrasladoLugar", "pTrasladoAmbulancia", "pTrasladoPersonal"].forEach(function (id) { setVal(id, ""); });
     pMarcarCargos("");
+    setVal("pEvento", "");
     $("pSignosList").innerHTML = "";
     $("pControlSi").checked = false;
     $("pControlNo").checked = false;
@@ -1231,6 +1305,7 @@
     setVal("pFecha", a.fecha || todayLocal());
     setVal("pHora", a.hora || nowHM());
     pMarcarCargos(a.cargo_atiende);
+    await cargarSelectorEventos(a.incidente_id || "");
     setVal("pQuienAtiende", a.quien_atiende || "");
     setVal("pNombre", a.nombre || "");
     setVal("pRun", a.run || "");
@@ -1378,7 +1453,7 @@
   }
 
   async function loadRealtimePac() {
-    if (!sb || !navigator.onLine || !puedeVerTodo()) return;
+    if (!sb || !navigator.onLine) return;
     const res = await sb.from("atenciones")
       .select("id, folio, nombre, run, quien_atiende, fecha, hora, creado_cliente, signos(id)")
       .order("creado_cliente", { ascending: false }).limit(50);
@@ -1702,12 +1777,14 @@
     applyRole();
     resetForm();
     pResetForm();
+    cargarSelectorEventos();
     updateConn();
     await refreshPending();
     syncPending();
     subscribeRealtime();
     await loadIncidentes();
-    if (puedeVerTodo()) { loadRealtime(); loadRealtimePac(); }
+    loadRealtimePac();
+    if (puedeVerTodo()) loadRealtime();
     showTab("lista");
   }
 

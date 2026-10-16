@@ -163,12 +163,11 @@ create policy "perfiles_delete" on public.perfiles
   for delete to authenticated using (public.mi_rol() = 'ADMINISTRADOR');
 
 -- ---------- atenciones ----------
--- Todos ingresan informacion. ADMINISTRADOR/MEDICO/ENFERMERIA/TENS ven todo.
--- RESCATISTA solo ve lo suyo y no puede editar.
+-- Todos los usuarios autenticados ven todas las atenciones.
 drop policy if exists "atenciones_select" on public.atenciones;
 create policy "atenciones_select" on public.atenciones
   for select to authenticated
-  using (public.mi_rol() <> 'RESCATISTA' or user_id = auth.uid());
+  using (true);
 
 drop policy if exists "atenciones_insert" on public.atenciones;
 create policy "atenciones_insert" on public.atenciones
@@ -186,11 +185,7 @@ create policy "atenciones_delete" on public.atenciones
 drop policy if exists "signos_select" on public.signos;
 create policy "signos_select" on public.signos
   for select to authenticated
-  using (exists (
-    select 1 from public.atenciones a
-    where a.id = atencion_id
-      and (public.mi_rol() <> 'RESCATISTA' or a.user_id = auth.uid())
-  ));
+  using (true);
 
 drop policy if exists "signos_insert" on public.signos;
 create policy "signos_insert" on public.signos
@@ -260,6 +255,10 @@ alter table public.incidentes alter column folio set default nextval('public.inc
 update public.incidentes set folio = nextval('public.incidentes_folio_seq') where folio is null;
 create unique index if not exists idx_incidentes_folio on public.incidentes(folio);
 create index if not exists idx_incidentes_creado on public.incidentes(creado_cliente desc);
+
+-- ---------- Pacientes atendidos en cada evento ----------
+alter table public.atenciones add column if not exists incidente_id uuid references public.incidentes(id) on delete set null;
+create index if not exists idx_atenciones_incidente on public.atenciones(incidente_id);
 
 -- ---------- Seguridad (RLS) ----------
 alter table public.incidentes enable row level security;
