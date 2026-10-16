@@ -21,7 +21,7 @@
       <div class="login-logo"><img src="icons/logo.jpeg" alt="SAFE MEDICAL"></div>
       <h1 class="brand-name">SAFE MEDICAL</h1>
       <p class="login-app-sub">Sistema de Comando de Eventos Masivos</p>
-      <p class="login-sub">Gestión y comando de incidentes</p>
+      <p class="login-sub">Gestión y comando de eventos</p>
 
       <label class="field">
         <span>Correo</span>
@@ -72,8 +72,9 @@
     </header>
 
     <nav class="tabs" id="tabs">
-      <button class="tab activo" data-tab="lista">Incidentes</button>
-      <button class="tab" data-tab="nuevo">Nuevo incidente</button>
+      <button class="tab activo" data-tab="lista">Eventos</button>
+      <button class="tab" data-tab="nuevo">Nuevo evento</button>
+      <button class="tab" data-tab="pacientes">Pacientes</button>
       <button class="tab" data-tab="realtime" data-ver>En vivo</button>
       <button class="tab" data-tab="reportes" data-admin>Reportes</button>
       <button class="tab" data-tab="usuarios" data-admin>Usuarios</button>
@@ -95,23 +96,23 @@
       <section class="panel vista activa" id="vista-lista">
         <div class="cabecera-seccion">
           <div>
-            <h2>Incidentes / Eventos masivos</h2>
-            <p class="hint">Registro y comando de incidentes. Sincroniza en tiempo real con todos los dispositivos.</p>
+            <h2>Eventos / Eventos masivos</h2>
+            <p class="hint">Registro y comando de eventos. Sincroniza en tiempo real con todos los dispositivos.</p>
           </div>
           <div class="acciones">
-            <button class="btn btn-primary" id="btnIrNuevo">NUEVO INCIDENTE</button>
+            <button class="btn btn-primary" id="btnIrNuevo">NUEVO EVENTO</button>
           </div>
         </div>
 
         <div class="mini-resumen">
-          <div class="item"><b id="statTotal">0</b>Incidentes</div>
+          <div class="item"><b id="statTotal">0</b>Eventos</div>
           <div class="item"><b id="statActivos">0</b>Activos</div>
           <div class="item"><b id="statPersonal">0</b>Personal</div>
           <div class="item"><b id="statRecursos">0</b>Recursos</div>
         </div>
 
         <div class="barra-herramientas">
-          <input type="search" id="buscador" class="buscador" placeholder="Buscar por folio, dirección, comuna o comandante...">
+          <input type="search" id="buscador" class="buscador" placeholder="Buscar por folio, recinto, comuna o encargado...">
           <select id="filtroEstado" class="select-filtro">
             <option value="">Todos los estados</option>
             <option value="Activo">Activos</option>
@@ -122,44 +123,51 @@
         </div>
 
         <div id="listaIncidentes" class="lista-tarjetas">
-          <div class="vacio">Cargando incidentes...</div>
+          <div class="vacio">Cargando eventos...</div>
         </div>
       </section>
 
-      <!-- ========== VISTA: NUEVO / EDITAR ========== -->
+      <!-- ========== VISTA: NUEVO / EDITAR EVENTO ========== -->
       <section class="panel vista" id="vista-nuevo">
         <div class="cabecera-seccion">
           <div>
-            <h2 id="formTitulo">Nuevo incidente</h2>
-            <p class="hint">Complete los datos del incidente. Los campos marcados con * son obligatorios.</p>
+            <h2 id="formTitulo">Nuevo evento</h2>
+            <p class="hint">Complete los datos del evento. Los campos marcados con * son obligatorios.</p>
           </div>
         </div>
 
         <fieldset class="grupo-form">
-          <legend>Identificación del incidente</legend>
+          <legend>Identificación del evento</legend>
           <div class="form-grid">
             <label>Folio
               <input type="text" id="folio" readonly placeholder="Automático">
             </label>
-            <label>Tipo de incidente
+            <label>Tipo de Evento
               <select id="tipo">
                 <option value="">Seleccione...</option>
-                <option>Accidente de tránsito</option>
-                <option>Incendio</option>
-                <option>Incendio estructural</option>
+                <option>Recital o concierto</option>
+                <option>Festival</option>
+                <option>Evento deportivo</option>
+                <option>Partido de fútbol</option>
+                <option>Fiesta / celebración</option>
+                <option>Año nuevo</option>
+                <option>Fiestas patrias</option>
+                <option>Manifestación / marcha</option>
+                <option>Feria / exposición</option>
+                <option>Evento religioso</option>
+                <option>Matrimonio</option>
+                <option>Graduación</option>
+                <option>Evento corporativo</option>
                 <option>Evento masivo</option>
-                <option>Emergencia médica</option>
-                <option>Derrumbe</option>
-                <option>Materiales peligrosos</option>
                 <option>Otro</option>
               </select>
             </label>
-            <label>Alerta
-              <select id="alerta">
-                <option value="">Sin alerta</option>
-                <option>Alerta Verde</option>
-                <option>Alerta Amarilla</option>
-                <option>Alerta Roja</option>
+            <label>Nivel
+              <select id="nivel">
+                <option value="">Sin nivel</option>
+                <option>Alto</option>
+                <option>Medio</option>
+                <option>Bajo</option>
               </select>
             </label>
             <label>Estado
@@ -185,7 +193,7 @@
         </fieldset>
 
         <fieldset class="grupo-form">
-          <legend>Ubicación y mando</legend>
+          <legend>Ubicación y organización</legend>
           <div class="form-grid">
             <label class="span-2">Dirección
               <input type="text" id="direccion" placeholder="Calle, número, referencia">
@@ -193,11 +201,11 @@
             <label>Comuna
               <input type="text" id="comuna" placeholder="Comuna">
             </label>
-            <label>Cuadrante / Sector
-              <input type="text" id="cuadrante" placeholder="Cuadrante o sector">
+            <label>Recinto
+              <input type="text" id="recinto" placeholder="Recinto / recinto o sector">
             </label>
-            <label>Comandante del incidente
-              <input type="text" id="comandante" placeholder="Nombre del comandante">
+            <label>Encargada(o) del evento
+              <input type="text" id="encargado" placeholder="Nombre del encargado(a) del evento">
             </label>
             <label>Punto de comando
               <input type="text" id="puntoComando" placeholder="Ubicación del punto de comando">
@@ -208,14 +216,14 @@
         <fieldset class="grupo-form">
           <legend>Descripción</legend>
           <label class="field">
-            <textarea id="descripcion" rows="4" placeholder="Descripción general del incidente, situación, riesgos, etc."></textarea>
+            <textarea id="descripcion" rows="4" placeholder="Descripción general del evento, situación, riesgos, etc."></textarea>
           </label>
         </fieldset>
 
         <fieldset class="grupo-form">
           <legend>Personal desplegado</legend>
           <div class="card-head">
-            <span class="hint" style="margin:0">Personal que participa en el incidente.</span>
+            <span class="hint" style="margin:0">Personal que participa en el evento.</span>
             <button class="btn-add" id="btnAddPersonal" title="Agregar personal">+</button>
           </div>
           <div id="personalList" class="dynamic-list"></div>
@@ -233,38 +241,19 @@
         <fieldset class="grupo-form">
           <legend>Equipos</legend>
           <div class="card-head">
-            <span class="hint" style="margin:0">Equipos y material desplegado en el incidente.</span>
+            <span class="hint" style="margin:0">Conforme equipos y marque los funcionarios que los integran.</span>
             <button class="btn-add" id="btnAddEquipo" title="Agregar equipo">+</button>
           </div>
           <div id="equiposList" class="dynamic-list"></div>
         </fieldset>
 
         <fieldset class="grupo-form">
-          <legend>Puesto médico</legend>
-          <p class="hint">¿Se instaló puesto médico?</p>
-          <div class="check-row">
-            <label class="check-inline"><input type="radio" name="pmOn" id="pmSi" value="SI"> SI</label>
-            <label class="check-inline"><input type="radio" name="pmOn" id="pmNo" value="NO"> NO</label>
+          <legend>Puestos médicos</legend>
+          <div class="card-head">
+            <span class="hint" style="margin:0">Puede agregar más de un puesto médico. Marque los funcionarios asignados.</span>
+            <button class="btn-add" id="btnAddPuesto" title="Agregar puesto médico">+</button>
           </div>
-          <div id="pmContainer" class="hidden">
-            <div class="form-grid">
-              <label>Ubicación del puesto médico
-                <input type="text" id="pmUbicacion" placeholder="Ubicación">
-              </label>
-              <label>Responsable
-                <input type="text" id="pmResponsable" placeholder="Nombre responsable">
-              </label>
-              <label>Atenciones realizadas
-                <input type="number" id="pmAtenciones" min="0" inputmode="numeric" placeholder="0">
-              </label>
-              <label>Derivaciones
-                <input type="number" id="pmDerivaciones" min="0" inputmode="numeric" placeholder="0">
-              </label>
-              <label class="span-2">Observaciones
-                <textarea id="pmObservaciones" rows="3" placeholder="Observaciones del puesto médico"></textarea>
-              </label>
-            </div>
-          </div>
+          <div id="puestosList" class="dynamic-list"></div>
         </fieldset>
 
         <div class="actions">
@@ -274,12 +263,162 @@
         </div>
       </section>
 
+      <!-- ========== VISTA: PACIENTES ========== -->
+      <section class="panel vista" id="vista-pacientes">
+        <div class="cabecera-seccion">
+          <div>
+            <h2>Atención de pacientes</h2>
+            <p class="hint">Registro de atención prehospitalaria. Se sincroniza con todos los dispositivos.</p>
+          </div>
+        </div>
+
+        <section class="card">
+          <h3 class="card-title">Atención</h3>
+          <label class="field">
+            <span>ID / Folio del paciente</span>
+            <input type="text" id="pFolio" readonly placeholder="Automático">
+          </label>
+          <div class="row">
+            <label class="field">
+              <span>Fecha</span>
+              <input type="date" id="pFecha" readonly>
+            </label>
+            <label class="field">
+              <span>Hora</span>
+              <input type="time" id="pHora" readonly>
+            </label>
+          </div>
+          <label class="field"><span>Quién atiende</span></label>
+          <div class="checkbox-group" id="pCargoGroup">
+            <label><input type="checkbox" value="MÉDICO"> MÉDICO</label>
+            <label><input type="checkbox" value="ENFERMERO(A)"> ENFERMERO(A)</label>
+            <label><input type="checkbox" value="TENS"> TENS</label>
+            <label><input type="checkbox" value="RESCATISTA"> RESCATISTA</label>
+            <label><input type="checkbox" value="PSICOLOGO(A)"> PSICOLOGO(A)</label>
+            <label><input type="checkbox" value="KINESIÓLOGO(A)"> KINESIÓLOGO(A)</label>
+          </div>
+          <label class="field">
+            <span>Nombre de quien atiende</span>
+            <input type="text" id="pQuienAtiende" placeholder="Nombre de quien atiende">
+          </label>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Datos del lesionado</h3>
+          <label class="field">
+            <span>Nombre</span>
+            <input type="text" id="pNombre" placeholder="Nombre completo">
+          </label>
+          <div class="row">
+            <label class="field">
+              <span>RUN</span>
+              <input type="text" id="pRun" placeholder="12.345.678-9">
+            </label>
+            <label class="field field-small">
+              <span>Edad</span>
+              <input type="number" id="pEdad" min="0" max="120" placeholder="años">
+            </label>
+          </div>
+          <label class="field">
+            <span>Domicilio</span>
+            <input type="text" id="pDomicilio" placeholder="Calle, número, comuna">
+          </label>
+          <label class="field">
+            <span>Fono</span>
+            <input type="tel" id="pFono" placeholder="+56 9 ...">
+          </label>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Signos vitales</h3>
+          <p class="hint">¿Registrar signos vitales?</p>
+          <div class="check-row">
+            <label class="check-inline"><input type="radio" name="pSvOn" id="pControlSi" value="SI"> SI</label>
+            <label class="check-inline"><input type="radio" name="pSvOn" id="pControlNo" value="NO"> NO</label>
+          </div>
+          <div id="pControlContainer" class="hidden">
+            <div class="card-head">
+              <span class="subtitle">Tomas de signos vitales</span>
+              <button class="btn-add" id="pBtnAddSigno" title="Agregar toma de signos vitales">+</button>
+            </div>
+            <div id="pSignosList" class="dynamic-list"></div>
+          </div>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Enfermedades de base</h3>
+          <textarea id="pEnfermedades" rows="4" placeholder="Patologías, alergias, etc."></textarea>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Medicamentos</h3>
+          <textarea id="pMedicamentos" rows="4" placeholder="Medicamentos de uso habitual"></textarea>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Motivo de la consulta</h3>
+          <textarea id="pMotivoConsulta" rows="4" placeholder="Motivo de la consulta"></textarea>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Tratamiento</h3>
+          <textarea id="pTratamiento" rows="4" placeholder="Tratamiento indicado"></textarea>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Medicamentos administrados</h3>
+          <textarea id="pMedicamentosAdmin" rows="4" placeholder="Medicamentos administrados durante la atención"></textarea>
+        </section>
+
+        <section class="card">
+          <h3 class="card-title">Traslado</h3>
+          <p class="hint">¿Se realizó traslado?</p>
+          <div class="check-row">
+            <label class="check-inline"><input type="radio" name="pTrasladoOn" id="pTrasladoSi" value="SI"> SI</label>
+            <label class="check-inline"><input type="radio" name="pTrasladoOn" id="pTrasladoNo" value="NO"> NO</label>
+          </div>
+          <div id="pTrasladoContainer" class="hidden">
+            <label class="field">
+              <span>Lugar donde fue trasladado</span>
+              <textarea id="pTrasladoLugar" rows="3" placeholder="Hospital, centro asistencial, domicilio, etc."></textarea>
+            </label>
+            <label class="field">
+              <span>Ambulancia</span>
+              <textarea id="pTrasladoAmbulancia" rows="2" placeholder="Identificación / móvil de la ambulancia"></textarea>
+            </label>
+            <label class="field">
+              <span>Personal a cargo</span>
+              <textarea id="pTrasladoPersonal" rows="2" placeholder="Nombre y cargo del personal a cargo"></textarea>
+            </label>
+          </div>
+        </section>
+
+        <div class="actions">
+          <button class="btn btn-whatsapp" id="pBtnWhatsapp">ENVIAR POR WHATSAPP</button>
+          <button class="btn btn-pdf" id="pBtnPdf">GENERAR PDF</button>
+          <button class="btn btn-primary" id="pBtnGuardar">GUARDAR Y SINCRONIZAR</button>
+          <button class="btn btn-new" id="pBtnNuevo">NUEVO PACIENTE</button>
+          <button class="btn btn-danger" id="pBtnLimpiar">LIMPIAR FORMULARIO</button>
+        </div>
+
+        <section class="card">
+          <div class="card-head">
+            <h3 class="card-title">Atenciones en línea</h3>
+            <span class="live-dot" id="pLiveDot"></span>
+          </div>
+          <p class="hint">Atenciones recibidas en tiempo real desde todos los dispositivos.</p>
+          <div id="pRealtimeList" class="realtime-list">
+            <div class="empty">Sin registros todavía.</div>
+          </div>
+        </section>
+      </section>
+
       <!-- ========== VISTA: EN VIVO ========== -->
       <section class="panel vista" id="vista-realtime">
         <div class="cabecera-seccion">
           <div>
             <h2>Registros en línea</h2>
-            <p class="hint">Incidentes recibidos en tiempo real desde todos los dispositivos.</p>
+            <p class="hint">Eventos recibidos en tiempo real desde todos los dispositivos.</p>
           </div>
           <span class="live-dot" id="liveDot"></span>
         </div>
@@ -293,17 +432,18 @@
         <div class="cabecera-seccion">
           <div>
             <h2>Reportes</h2>
-            <p class="hint">Reporte general de incidentes y respaldos completos.</p>
+            <p class="hint">Reporte general de eventos y respaldos completos.</p>
           </div>
         </div>
         <div class="tarjetas-resumen">
-          <div class="tarjeta-resumen"><b id="rpTotal">0</b><span>Incidentes</span></div>
+          <div class="tarjeta-resumen"><b id="rpTotal">0</b><span>Eventos</span></div>
           <div class="tarjeta-resumen verde"><b id="rpActivos">0</b><span>Activos</span></div>
           <div class="tarjeta-resumen negro"><b id="rpPersonal">0</b><span>Personal total</span></div>
           <div class="tarjeta-resumen ambar"><b id="rpRecursos">0</b><span>Recursos total</span></div>
         </div>
         <div class="actions">
-          <button class="btn btn-pdf" id="btnPdfGlobal">GENERAR PDF GLOBAL</button>
+          <button class="btn btn-pdf" id="btnPdfGlobal">GENERAR PDF GLOBAL (EVENTOS)</button>
+          <button class="btn btn-pdf" id="btnPdfPacientes">GENERAR PDF GLOBAL (PACIENTES)</button>
           <button class="btn btn-ghost" id="btnBackupJson">RESPALDO COMPLETO (JSON)</button>
           <button class="btn btn-ghost" id="btnBackupCsv">RESPALDO CSV</button>
         </div>
@@ -350,7 +490,7 @@
       <section class="panel vista" id="vista-informe">
         <div class="cabecera-seccion no-print">
           <div>
-            <h2>Informe del incidente</h2>
+            <h2>Informe del evento</h2>
           </div>
           <div class="acciones">
             <button class="btn btn-pdf" id="btnInformePdf">GENERAR PDF</button>

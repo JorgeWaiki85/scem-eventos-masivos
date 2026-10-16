@@ -212,12 +212,12 @@ create table if not exists public.incidentes (
   user_id         uuid references auth.users(id) on delete set null,
   folio           bigint,
   tipo            text,
-  alerta          text,
+  nivel           text,
   estado          text default 'Activo',
   direccion       text,
   comuna          text,
-  cuadrante       text,
-  comandante      text,
+  recinto         text,
+  encargado       text,
   punto_comando   text,
   fecha_inicio    date,
   hora_inicio     text,
@@ -227,11 +227,32 @@ create table if not exists public.incidentes (
   personal        jsonb not null default '[]'::jsonb,
   recursos        jsonb not null default '[]'::jsonb,
   equipos         jsonb not null default '[]'::jsonb,
-  puesto_medico   jsonb not null default '{}'::jsonb,
+  puesto_medico   jsonb not null default '[]'::jsonb,
   dispositivo     text,
   creado_cliente  timestamptz default now(),
   sincronizado_at timestamptz default now()
 );
+
+-- ---------- Migraciones de columnas (nombres anteriores) ----------
+do $$
+begin
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'incidentes' and column_name = 'alerta') then
+    alter table public.incidentes rename column alerta to nivel;
+  end if;
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'incidentes' and column_name = 'cuadrante') then
+    alter table public.incidentes rename column cuadrante to recinto;
+  end if;
+  if exists (select 1 from information_schema.columns
+             where table_schema = 'public' and table_name = 'incidentes' and column_name = 'comandante') then
+    alter table public.incidentes rename column comandante to encargado;
+  end if;
+end $$;
+
+alter table public.incidentes alter column puesto_medico set default '[]'::jsonb;
+update public.incidentes set puesto_medico = '[]'::jsonb
+  where puesto_medico is null or puesto_medico = '{}'::jsonb;
 
 -- ---------- Folio (ID auto-incremental por incidente) ----------
 create sequence if not exists public.incidentes_folio_seq;
