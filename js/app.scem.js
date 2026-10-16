@@ -1112,7 +1112,11 @@
         await idbPut(STORE_EV, rec);
       }
       if (pend.length) toast(pend.length + " evento(s) sincronizado(s)", "ok");
-    } catch (e) { console.warn("Error sync eventos:", e); }
+    } catch (e) {
+      console.warn("Error sync eventos:", e);
+      const info = e ? [e.code, e.message, e.details, e.hint].filter(Boolean).join(" · ") : String(e);
+      toast("No se pudo sincronizar un evento: " + (info || "error desconocido"), "err");
+    }
     finally { syncingEv = false; }
   }
 
@@ -1502,7 +1506,11 @@
         await idbPut(STORE_PAC, rec);
       }
       if (pend.length) toast(pend.length + " atención(es) sincronizada(s)", "ok");
-    } catch (e) { console.warn("Error sync pacientes:", e); }
+    } catch (e) {
+      console.warn("Error sync pacientes:", e);
+      const info = e ? [e.code, e.message, e.details, e.hint].filter(Boolean).join(" · ") : String(e);
+      toast("No se pudo sincronizar una atención: " + (info || "error desconocido"), "err");
+    }
     finally { syncingPac = false; }
   }
 
