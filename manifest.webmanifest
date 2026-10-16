@@ -1,8 +1,8 @@
 ﻿{
   "id": "./",
-  "name": "AtenciÃ³n de Pacientes",
-  "short_name": "AtenciÃ³n",
-  "description": "Registro offline de atenciÃ³n de pacientes con sincronizaciÃ³n en la nube",
+  "name": "Sistema de Comando de Eventos Masivos",
+  "short_name": "SCEM",
+  "description": "Comando y registro de incidentes y eventos masivos con sincronización en la nube",
   "start_url": "./index.html",
   "scope": "./",
   "display": "standalone",
@@ -15,7 +15,7 @@
   "categories": ["medical", "productivity"],
   "prefer_related_applications": false,
   "shortcuts": [
-    { "name": "Nueva atenciÃ³n", "url": "./index.html" }
+    { "name": "Nuevo incidente", "url": "./index.html" }
   ],
   "icons": [
     { "src": "icons/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },

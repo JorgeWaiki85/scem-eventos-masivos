@@ -46,7 +46,7 @@ const server = http.createServer(function (req, res) {
 
 server.listen(PORT, function () {
   console.log("");
-  console.log("  Atencion de Pacientes");
+  console.log("  Sistema de Comando de Eventos Masivos");
   console.log("  Abrir en el navegador:  http://localhost:" + PORT);
   console.log("  Para detener: Ctrl + C");
   console.log("");

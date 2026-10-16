@@ -205,6 +205,62 @@ create policy "signos_delete" on public.signos
   for delete to authenticated using (public.mi_rol() = 'ADMINISTRADOR');
 
 -- ============================================================
+--  INCIDENTES / EVENTOS MASIVOS  (tabla principal de esta app)
+-- ============================================================
+create table if not exists public.incidentes (
+  id              uuid primary key default gen_random_uuid(),
+  user_id         uuid references auth.users(id) on delete set null,
+  folio           bigint,
+  tipo            text,
+  alerta          text,
+  estado          text default 'Activo',
+  direccion       text,
+  comuna          text,
+  cuadrante       text,
+  comandante      text,
+  punto_comando   text,
+  fecha_inicio    date,
+  hora_inicio     text,
+  fecha_control   date,
+  hora_control    text,
+  descripcion     text,
+  personal        jsonb not null default '[]'::jsonb,
+  recursos        jsonb not null default '[]'::jsonb,
+  equipos         jsonb not null default '[]'::jsonb,
+  puesto_medico   jsonb not null default '{}'::jsonb,
+  dispositivo     text,
+  creado_cliente  timestamptz default now(),
+  sincronizado_at timestamptz default now()
+);
+
+-- ---------- Folio (ID auto-incremental por incidente) ----------
+create sequence if not exists public.incidentes_folio_seq;
+alter table public.incidentes alter column folio set default nextval('public.incidentes_folio_seq');
+update public.incidentes set folio = nextval('public.incidentes_folio_seq') where folio is null;
+create unique index if not exists idx_incidentes_folio on public.incidentes(folio);
+create index if not exists idx_incidentes_creado on public.incidentes(creado_cliente desc);
+
+-- ---------- Seguridad (RLS) ----------
+alter table public.incidentes enable row level security;
+
+drop policy if exists "incidentes_select" on public.incidentes;
+create policy "incidentes_select" on public.incidentes
+  for select to authenticated
+  using (public.mi_rol() <> 'RESCATISTA' or user_id = auth.uid());
+
+drop policy if exists "incidentes_insert" on public.incidentes;
+create policy "incidentes_insert" on public.incidentes
+  for insert to authenticated with check (true);
+
+drop policy if exists "incidentes_update" on public.incidentes;
+create policy "incidentes_update" on public.incidentes
+  for update to authenticated using (public.mi_rol() = 'ADMINISTRADOR');
+
+drop policy if exists "incidentes_delete" on public.incidentes;
+create policy "incidentes_delete" on public.incidentes
+  for delete to authenticated using (public.mi_rol() = 'ADMINISTRADOR');
+
+-- ============================================================
 --  TIEMPO REAL (Realtime)
 -- ============================================================
 do $$
@@ -215,6 +271,10 @@ begin
   end;
   begin
     alter publication supabase_realtime add table public.signos;
+  exception when duplicate_object then null;
+  end;
+  begin
+    alter publication supabase_realtime add table public.incidentes;
   exception when duplicate_object then null;
   end;
 end $$;
