@@ -1023,7 +1023,7 @@
 
   async function mostrarInforme(inc) {
     informeInc = inc;
-    inc._pacientes = await cargarPacientesEvento(inc.id);
+    inc._pacientes = await cargarPacientesEvento(inc.id, inc.fecha_inicio);
     $("informeContenido").innerHTML = buildInformeHTML(inc);
     showTab("informe");
   }
@@ -1031,6 +1031,7 @@
   function verInformeActual() {
     const inc = collect();
     if (currentFolio != null) inc.folio = currentFolio;
+    inc._pacientes = [];
     mostrarInforme(inc);
   }
 
@@ -1083,7 +1084,7 @@
     if (pacientes.length) {
       out += "\n*Pacientes atendidos (" + pacientes.length + ")*\n";
       pacientes.forEach(function (a) {
-        out += "- " + [a.folio != null ? "#" + a.folio : "", a.nombre, a.run, a.edad, a.cargo_atiende, a.quien_atiende].filter(Boolean).join(" · ") + "\n";
+        out += "- " + [a.folio != null ? "#" + a.folio : "", a.nombre, a.run, a.edad, a.fecha, a.hora, a.cargo_atiende, a.quien_atiende].filter(Boolean).join(" · ") + "\n";
       });
     }
     return out.trim();
@@ -1199,7 +1200,7 @@
 
     if (pacientes.length) {
       titulo("Pacientes atendidos (" + pacientes.length + ")");
-      tabla(["#", "Folio", "Nombre", "RUN", "Edad", "Quién atiende"], pacientes.map(function (a, i) { return [i + 1, a.folio != null ? "#" + a.folio : "", a.nombre, a.run, a.edad, [a.cargo_atiende, a.quien_atiende].filter(Boolean).join(" · ")]; }), [7, 16, 48, 30, 12, 43]);
+      tabla(["#", "Folio", "Nombre", "RUN", "Edad", "Fecha", "Hora", "Quién atiende"], pacientes.map(function (a, i) { return [i + 1, a.folio != null ? "#" + a.folio : "", a.nombre || "", a.run || "", a.edad || "", a.fecha || "", a.hora || "", [a.cargo_atiende, a.quien_atiende].filter(Boolean).join(" · ")]; }), [7, 16, 40, 26, 14, 22, 16, 55]);
     }
 
     const pages = doc.getNumberOfPages();
@@ -1416,22 +1417,57 @@
     if (sel.value !== (actual || "")) sel.value = "";
   }
 
-  async function cargarPacientesEvento(incId) {
-    if (!incId) return [];
+  async function cargarPacientesEvento(incId, fechaInicio) {
+    const out = [];
+    const seen = {};
+    if (!incId && !fechaInicio) return [];
     if (sb && navigator.onLine) {
       try {
-        const res = await sb.from("atenciones")
-          .select("id, folio, nombre, run, edad, fecha, hora, cargo_atiende, quien_atiende, traslado, creado_cliente")
-          .eq("incidente_id", incId).order("folio", { ascending: true });
-        if (!res.error) return res.data || [];
+        if (incId) {
+          const res = await sb.from("atenciones")
+            .select("id, folio, nombre, run, edad, fecha, hora, cargo_atiende, quien_atiende, traslado, creado_cliente")
+            .eq("incidente_id", incId).order("folio", { ascending: true });
+          if (!res.error && res.data) {
+            res.data.forEach(function (a) { if (!seen[a.id]) { seen[a.id] = true; out.push(a); } });
+          }
+        }
+        if (fechaInicio) {
+          const res2 = await sb.from("atenciones")
+            .select("id, folio, nombre, run, edad, fecha, hora, cargo_atiende, quien_atiende, traslado, creado_cliente")
+            .eq("fecha", fechaInicio).order("folio", { ascending: true });
+          if (!res2.error && res2.data) {
+            res2.data.forEach(function (a) {
+              if (!seen[a.id]) { seen[a.id] = true; out.push(a); }
+              else {
+                const idx = out.findIndex(function (x) { return x.id === a.id; });
+                if (idx >= 0 && !out[idx].incidente_id && a.incidente_id) out[idx].incidente_id = a.incidente_id;
+              }
+            });
+          }
+        }
       } catch (e) {}
     }
     try {
       const local = await idbAll(STORE_PAC);
-      return local.filter(function (r) { return r.atencion && r.atencion.incidente_id === incId; })
-        .map(function (r) { return Object.assign({}, r.atencion, { folio: r.folio }); })
-        .sort(function (a, b) { return (a.folio == null ? Infinity : a.folio) - (b.folio == null ? Infinity : b.folio); });
-    } catch (e) { return []; }
+      local.forEach(function (r) {
+        const a = r.atencion || {};
+        if (!a.id) return;
+        if ((incId && a.incidente_id === incId) || (fechaInicio && a.fecha === fechaInicio)) {
+          if (!seen[a.id]) {
+            seen[a.id] = true;
+            out.push(Object.assign({}, a, { folio: r.folio }));
+          }
+        }
+      });
+    } catch (e) {}
+    out.sort(function (a, b) {
+      const fa = a.fecha || "", fb = b.fecha || "";
+      if (fa !== fb) return fa.localeCompare(fb);
+      const ha = a.hora || "", hb = b.hora || "";
+      if (ha !== hb) return ha.localeCompare(hb);
+      return (a.folio == null ? Infinity : a.folio) - (b.folio == null ? Infinity : b.folio);
+    });
+    return out;
   }
 
   function pCollect() {
