@@ -224,7 +224,11 @@
           <legend>Personal desplegado</legend>
           <div class="card-head">
             <span class="hint" style="margin:0">Personal que participa en el evento.</span>
-            <button class="btn-add" id="btnAddPersonal" title="Agregar personal">+</button>
+            <div style="display:flex;gap:8px;align-items:center">
+              <button type="button" class="btn-mini dark" id="btnImportPersonal" title="Importar personal desde Excel">Importar Excel</button>
+              <input type="file" id="importPersonal" accept=".xlsx,.xls,.csv" style="display:none">
+              <button class="btn-add" id="btnAddPersonal" title="Agregar personal">+</button>
+            </div>
           </div>
           <div id="personalList" class="dynamic-list"></div>
         </fieldset>
@@ -516,6 +520,7 @@
 
   <script src="lib/supabase.js"></script>
   <script src="lib/jspdf.umd.min.js"></script>
+  <script src="lib/xlsx.full.min.js"></script>
   <script src="js/config.js"></script>
   <script src="js/logo-data.js"></script>
   <script src="js/app.scem.js"></script>

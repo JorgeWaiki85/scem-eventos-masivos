@@ -413,6 +413,100 @@
     }).filter(Boolean);
   }
 
+  /* ---------------- Importar personal desde Excel ---------------- */
+  const CARGO_ALIAS = {
+    "medico": "MEDICO", "medica": "MEDICO", "doctor": "MEDICO", "doctora": "MEDICO", "dr": "MEDICO", "dra": "MEDICO",
+    "enfermeria": "ENFERMERIA", "enfermero": "ENFERMERIA", "enfermera": "ENFERMERIA",
+    "kinesiologo": "KINESIOLOGO", "kinesiologa": "KINESIOLOGO", "kinesiologo a": "KINESIOLOGO",
+    "tens": "TENS", "tecnico en enfermeria": "TENS", "tecnico": "TENS",
+    "rescatista": "RESCATISTA", "rescatista voluntario": "RESCATISTA",
+    "conductor": "CONDUCTOR", "chofer": "CONDUCTOR",
+    "psicologo": "PSICOLOGO", "psicologa": "PSICOLOGO", "psicologo a": "PSICOLOGO",
+    "logistica": "LOGISTICA",
+    "otro": "OTRO"
+  };
+
+  function normTxt(s) {
+    return String(s == null ? "" : s).toLowerCase()
+      .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, " ").trim();
+  }
+
+  function cargoDesdeTexto(raw) {
+    const n = normTxt(raw);
+    if (!n) return "";
+    const directo = Object.keys(CARGO_LABEL).filter(function (k) {
+      return normTxt(k) === n || normTxt(CARGO_LABEL[k]) === n;
+    })[0];
+    if (directo) return directo;
+    return CARGO_ALIAS[n] || "";
+  }
+
+  function celdaExcel(obj, nombres) {
+    for (let i = 0; i < nombres.length; i++) {
+      for (const k in obj) {
+        if (normTxt(k) === nombres[i] && String(obj[k] == null ? "" : obj[k]).trim()) return String(obj[k]).trim();
+      }
+    }
+    return "";
+  }
+
+  function normalizarHora(v) {
+    const m = String(v || "").match(/(\d{1,2}):(\d{2})/);
+    if (!m) return "";
+    return String(m[1]).padStart(2, "0") + ":" + m[2];
+  }
+
+  function importarPersonalExcel(file) {
+    if (!file) return;
+    if (!window.XLSX) { toast("No se pudo cargar la librería de Excel", "err"); return; }
+    const reader = new FileReader();
+    reader.onload = function (ev) {
+      try {
+        const wb = XLSX.read(new Uint8Array(ev.target.result), { type: "array" });
+        const ws = wb.Sheets[wb.SheetNames[0]];
+        if (!ws) { toast("El Excel no tiene hojas", "err"); return; }
+        const filas = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false });
+        const existentes = {};
+        readRows("personal").forEach(function (p) {
+          existentes[normTxt(p.nombre) + "|" + normTxt(p.run)] = true;
+        });
+        let agregados = 0, repetidos = 0;
+        filas.forEach(function (r) {
+          const nombre1 = celdaExcel(r, ["nombre completo", "nombre", "nombre funcionario", "funcionario"]);
+          const apellido = celdaExcel(r, ["apellidos", "apellido"]);
+          let nombre = nombre1;
+          if (nombre1 && apellido && normTxt(nombre1).indexOf(normTxt(apellido)) < 0) nombre = nombre1 + " " + apellido;
+          const run = celdaExcel(r, ["run", "rut", "cedula", "documento", "identificacion"]);
+          const cargoTxt = celdaExcel(r, ["cargo", "rol", "funcion", "perfil"]);
+          const contacto = celdaExcel(r, ["contacto", "fono", "telefono", "celular", "movil", "whatsapp"]);
+          const hora = normalizarHora(celdaExcel(r, ["hora llegada", "hora de llegada", "hora"]));
+          const sis = celdaExcel(r, ["sis"]);
+          const rcm = celdaExcel(r, ["rcm"]);
+          if (!nombre && !run && !cargoTxt) return;
+          const cargo = cargoDesdeTexto(cargoTxt) || (cargoTxt ? "OTRO" : "");
+          const firma = normTxt(nombre) + "|" + normTxt(run);
+          if (firma !== "|" && existentes[firma]) { repetidos++; return; }
+          existentes[firma] = true;
+          addRow("personal", {
+            nombre: nombre, run: run, cargo: cargo, contacto: contacto,
+            hora_llegada: hora, sis: sis, rcm: rcm
+          });
+          agregados++;
+        });
+        refreshFuncionarios();
+        if (agregados) toast(agregados + " integrante(s) importado(s)" + (repetidos ? " · " + repetidos + " ya existían" : ""), "ok");
+        else if (repetidos) toast("Todos los integrantes ya estaban en la lista", "err");
+        else toast("No se encontraron filas válidas. Encabezados esperados: Nombre, RUN, Cargo, Contacto, Hora, SIS/RCM.", "err");
+      } catch (e) {
+        console.warn("Error import Excel:", e);
+        toast("No se pudo leer el Excel: " + (e && e.message ? e.message : e), "err");
+      }
+    };
+    reader.onerror = function () { toast("No se pudo abrir el archivo", "err"); };
+    reader.readAsArrayBuffer(file);
+  }
+
   /* ---------------- Campos dinámicos: personal (SIS/RCM) y ambulancias ---------------- */
   function personalExtra(p) {
     if (!p) return "";
@@ -1816,6 +1910,12 @@
 
     $("btnIrNuevo").addEventListener("click", nuevoEvento);
     $("btnAddPersonal").addEventListener("click", function () { addRow("personal"); });
+    $("btnImportPersonal").addEventListener("click", function () { const inp = $("importPersonal"); if (inp) inp.click(); });
+    if ($("importPersonal")) $("importPersonal").addEventListener("change", function () {
+      const f = this.files && this.files[0];
+      importarPersonalExcel(f);
+      this.value = "";
+    });
     $("btnAddRecurso").addEventListener("click", function () { addRow("recursos"); });
     $("btnAddEquipo").addEventListener("click", function () { addRow("equipos"); });
     $("btnAddPuesto").addEventListener("click", function () { addRow("puestos"); });

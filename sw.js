@@ -1,4 +1,4 @@
-﻿const CACHE = "scem-eventos-masivos-v23";
+﻿const CACHE = "scem-eventos-masivos-v24";
 const ASSETS = [
   "./",
   "./index.html",
@@ -9,6 +9,7 @@ const ASSETS = [
   "./js/app.scem.js",
   "./lib/supabase.js",
   "./lib/jspdf.umd.min.js",
+  "./lib/xlsx.full.min.js",
   "./icons/icon-192.png",
   "./icons/icon-512.png",
   "./icons/logo.jpeg"
