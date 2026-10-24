@@ -1496,6 +1496,7 @@
   async function pGuardar() {
     const data = pCollect();
     if (!data.atencion.nombre) { toast("Ingrese el nombre del lesionado", "err"); return; }
+    if (!esAdmin()) { toast("Solo ADMINISTRADOR puede guardar/editar pacientes", "err"); return; }
     pEditId = data.atencion.id;
     const rec = { id: data.atencion.id, atencion: data.atencion, signos: data.signos, folio: pCurrentFolio, synced: false, creado_cliente: new Date().toISOString() };
     await idbPut(STORE_PAC, rec);
