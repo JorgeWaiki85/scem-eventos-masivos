@@ -7,7 +7,7 @@
   const STORE_PAC = "atenciones";
   const ROLES = ["ADMINISTRADOR", "MEDICO", "ENFERMERIA", "TENS", "RESCATISTA"];
   const ROL_LABEL = { ADMINISTRADOR: "ADMINISTRADOR", MEDICO: "MÉDICO", ENFERMERIA: "ENFERMERA(O)", TENS: "TENS", RESCATISTA: "RESCATISTA" };
-  const CARGO_LABEL = { MEDICO: "Médico", ENFERMERIA: "Enfermera(o)", KINESIOLOGO: "Kinesiólogo(a)", TENS: "TENS", RESCATISTA: "Rescatista", CONDUCTOR: "Conductor", PSICOLOGO: "Psicólogo(a)", LOGISTICA: "Logística", OTRO: "Otro" };
+  const CARGO_LABEL = { MEDICO: "Médico", ENFERMERIA: "Enfermera(o)", KINESIOLOGO: "Kinesiólogo(a)", TENS: "TENS", RESCATISTA: "Rescatista", CONDUCTOR: "Conductor", PSICOLOGO: "Psicólogo(a)", LOGISTICA: "Logística", CONTENCION_EMOCIONAL: "Contención Emocional", OTRO: "Otro" };
   const UNITS = { fc: "(LTM)", fr: "(RPM)", sat: "(% AMBIENTE)", egt: "(MG/DL)" };
   const AMB_CLASIF = [
     { v: "", l: "Seleccione..." },
@@ -423,6 +423,7 @@
     "conductor": "CONDUCTOR", "chofer": "CONDUCTOR",
     "psicologo": "PSICOLOGO", "psicologa": "PSICOLOGO", "psicologo a": "PSICOLOGO",
     "logistica": "LOGISTICA",
+    "contencion": "CONTENCION_EMOCIONAL", "contencion emocional": "CONTENCION_EMOCIONAL", "apoyo emocional": "CONTENCION_EMOCIONAL", "acompanamiento emocional": "CONTENCION_EMOCIONAL",
     "otro": "OTRO"
   };
 
