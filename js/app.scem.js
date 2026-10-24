@@ -373,7 +373,7 @@
     }
     list.appendChild(node);
     renumberRows(type);
-    if (spec.hasFunc || type === "personal") refreshFuncionarios();
+    if ((spec.hasFunc || type === "personal") && !importandoPersonal) refreshFuncionarios();
   }
 
   function renumberRows(type) {
@@ -443,13 +443,107 @@
     return CARGO_ALIAS[n] || "";
   }
 
-  function celdaExcel(obj, nombres) {
-    for (let i = 0; i < nombres.length; i++) {
-      for (const k in obj) {
-        if (normTxt(k) === nombres[i] && String(obj[k] == null ? "" : obj[k]).trim()) return String(obj[k]).trim();
-      }
+  let importandoPersonal = false;
+
+  const COLS_PERSONAL = {
+    nombre: ["nombre completo", "nombres y apellidos", "apellido y nombre", "apellidos y nombres", "nombres", "nombre", "nombre funcionario", "funcionario", "funcionarios", "personal"],
+    apellido: ["apellidos", "apellido"],
+    apPaterno: ["apellido paterno", "paterno"],
+    apMaterno: ["apellido materno", "materno"],
+    run: ["run", "rut", "cedula", "cedula de identidad", "documento", "identificacion", "dni"],
+    cargo: ["cargo", "cargos", "rol", "funcion", "funciones", "perfil", "especialidad"],
+    contacto: ["contacto", "fono", "telefono", "celular", "movil", "whatsapp", "numero de contacto", "telefono de contacto"],
+    hora: ["hora llegada", "hora de llegada", "hora ingreso", "hora de ingreso", "hora"],
+    sis: ["sis"],
+    rcm: ["rcm"]
+  };
+
+  function indiceColumna(encabezados, nombres) {
+    for (let i = 0; i < encabezados.length; i++) {
+      const h = normTxt(encabezados[i]);
+      if (h && nombres.indexOf(h) >= 0) return i;
     }
-    return "";
+    return -1;
+  }
+
+  function valorCelda(fila, idx) {
+    if (idx < 0 || idx >= fila.length) return "";
+    return String(fila[idx] == null ? "" : fila[idx]).trim();
+  }
+
+  function esFilaEncabezado(fila) {
+    const tokens = (fila || []).map(normTxt);
+    const noVacias = tokens.filter(Boolean).length;
+    const tieneNombre = tokens.some(function (t) {
+      return t.indexOf("nombre") >= 0 || t.indexOf("funcionario") >= 0 || t.indexOf("apellido") >= 0;
+    });
+    const tieneRun = tokens.some(function (t) { return t === "run" || t === "rut" || t.indexOf("cedula") >= 0; });
+    const tieneCargo = tokens.some(function (t) { return t === "cargo" || t === "rol" || t === "funcion"; });
+    return tieneNombre && (tieneRun || tieneCargo || noVacias >= 2);
+  }
+
+  function rangoReal(ws) {
+    let maxR = -1, maxC = -1;
+    Object.keys(ws).forEach(function (k) {
+      if (k.charAt(0) === "!") return;
+      const c = XLSX.utils.decode_cell(k);
+      if (c.r > maxR) maxR = c.r;
+      if (c.c > maxC) maxC = c.c;
+    });
+    if (maxR < 0 || maxC < 0) return null;
+    if (maxR > 50000) maxR = 50000;
+    return { s: { r: 0, c: 0 }, e: { r: maxR, c: maxC } };
+  }
+
+  function importarHojaPersonal(ws, destino) {
+    const rango = rangoReal(ws);
+    if (!rango) return 0;
+    const aoa = XLSX.utils.sheet_to_json(ws, { header: 1, defval: "", raw: false, blankrows: true, range: rango });
+    let h = -1;
+    for (let i = 0; i < Math.min(aoa.length, 30); i++) {
+      if (esFilaEncabezado(aoa[i] || [])) { h = i; break; }
+    }
+    if (h < 0) return 0;
+    const enc = aoa[h] || [];
+    const idx = {
+      nombre: indiceColumna(enc, COLS_PERSONAL.nombre),
+      apellido: indiceColumna(enc, COLS_PERSONAL.apellido),
+      apPaterno: indiceColumna(enc, COLS_PERSONAL.apPaterno),
+      apMaterno: indiceColumna(enc, COLS_PERSONAL.apMaterno),
+      run: indiceColumna(enc, COLS_PERSONAL.run),
+      cargo: indiceColumna(enc, COLS_PERSONAL.cargo),
+      contacto: indiceColumna(enc, COLS_PERSONAL.contacto),
+      hora: indiceColumna(enc, COLS_PERSONAL.hora),
+      sis: indiceColumna(enc, COLS_PERSONAL.sis),
+      rcm: indiceColumna(enc, COLS_PERSONAL.rcm)
+    };
+    let agregados = 0;
+    for (let r = h + 1; r < aoa.length; r++) {
+      const fila = aoa[r] || [];
+      if (!fila.length) continue;
+      let nombre = valorCelda(fila, idx.nombre);
+      const apellidos = [valorCelda(fila, idx.apellido), valorCelda(fila, idx.apPaterno), valorCelda(fila, idx.apMaterno)]
+        .filter(Boolean).join(" ").trim();
+      if (!nombre && !apellidos) {
+        for (let c = 0; c < fila.length; c++) {
+          const s = String(fila[c] == null ? "" : fila[c]).trim();
+          if (s && !/^\d+([.,]\d+)?$/.test(s) && normTxt(s).length > 2) { nombre = s; break; }
+        }
+      }
+      if (nombre && apellidos && normTxt(nombre).indexOf(normTxt(apellidos)) < 0) nombre = nombre + " " + apellidos;
+      const run = valorCelda(fila, idx.run);
+      const cargoTxt = valorCelda(fila, idx.cargo);
+      const contacto = valorCelda(fila, idx.contacto);
+      const hora = normalizarHora(valorCelda(fila, idx.hora));
+      const sis = valorCelda(fila, idx.sis);
+      const rcm = valorCelda(fila, idx.rcm);
+      const cargo = cargoDesdeTexto(cargoTxt) || (cargoTxt ? "OTRO" : "");
+      if (!nombre && !run && !cargo) continue;
+      if (/^(total|totales|subtotal)/.test(normTxt(nombre)) && !run) continue;
+      destino.push({ nombre: nombre, run: run, cargo: cargo, contacto: contacto, hora_llegada: hora, sis: sis, rcm: rcm });
+      agregados++;
+    }
+    return agregados;
   }
 
   function normalizarHora(v) {
@@ -465,41 +559,35 @@
     reader.onload = function (ev) {
       try {
         const wb = XLSX.read(new Uint8Array(ev.target.result), { type: "array" });
-        const ws = wb.Sheets[wb.SheetNames[0]];
-        if (!ws) { toast("El Excel no tiene hojas", "err"); return; }
-        const filas = XLSX.utils.sheet_to_json(ws, { defval: "", raw: false });
-        const existentes = {};
-        readRows("personal").forEach(function (p) {
-          existentes[normTxt(p.nombre) + "|" + normTxt(p.run)] = true;
+        const nuevas = [];
+        (wb.SheetNames || []).forEach(function (nombreHoja) {
+          const ws = wb.Sheets[nombreHoja];
+          if (ws) importarHojaPersonal(ws, nuevas);
         });
+        if (!nuevas.length) {
+          toast("No se encontraron filas válidas. Encabezados esperados: Nombre, RUN, Cargo, Contacto, Hora, SIS/RCM.", "err");
+          return;
+        }
+        const runs = {};
+        readRows("personal").forEach(function (p) {
+          const r = normTxt(p.run);
+          if (r) runs[r] = true;
+        });
+        importandoPersonal = true;
         let agregados = 0, repetidos = 0;
-        filas.forEach(function (r) {
-          const nombre1 = celdaExcel(r, ["nombre completo", "nombre", "nombre funcionario", "funcionario"]);
-          const apellido = celdaExcel(r, ["apellidos", "apellido"]);
-          let nombre = nombre1;
-          if (nombre1 && apellido && normTxt(nombre1).indexOf(normTxt(apellido)) < 0) nombre = nombre1 + " " + apellido;
-          const run = celdaExcel(r, ["run", "rut", "cedula", "documento", "identificacion"]);
-          const cargoTxt = celdaExcel(r, ["cargo", "rol", "funcion", "perfil"]);
-          const contacto = celdaExcel(r, ["contacto", "fono", "telefono", "celular", "movil", "whatsapp"]);
-          const hora = normalizarHora(celdaExcel(r, ["hora llegada", "hora de llegada", "hora"]));
-          const sis = celdaExcel(r, ["sis"]);
-          const rcm = celdaExcel(r, ["rcm"]);
-          if (!nombre && !run && !cargoTxt) return;
-          const cargo = cargoDesdeTexto(cargoTxt) || (cargoTxt ? "OTRO" : "");
-          const firma = normTxt(nombre) + "|" + normTxt(run);
-          if (firma !== "|" && existentes[firma]) { repetidos++; return; }
-          existentes[firma] = true;
-          addRow("personal", {
-            nombre: nombre, run: run, cargo: cargo, contacto: contacto,
-            hora_llegada: hora, sis: sis, rcm: rcm
-          });
+        nuevas.forEach(function (p) {
+          const r = normTxt(p.run);
+          if (r && runs[r]) { repetidos++; return; }
+          if (r) runs[r] = true;
+          addRow("personal", p);
           agregados++;
         });
+        importandoPersonal = false;
         refreshFuncionarios();
-        if (agregados) toast(agregados + " integrante(s) importado(s)" + (repetidos ? " · " + repetidos + " ya existían" : ""), "ok");
-        else if (repetidos) toast("Todos los integrantes ya estaban en la lista", "err");
-        else toast("No se encontraron filas válidas. Encabezados esperados: Nombre, RUN, Cargo, Contacto, Hora, SIS/RCM.", "err");
+        console.log("Import personal: " + nuevas.length + " fila(s) leída(s), " + agregados + " agregada(s), " + repetidos + " omitida(s) por RUN repetido.");
+        toast(agregados + " integrante(s) importado(s)" + (repetidos ? " · " + repetidos + " omitido(s) por RUN repetido" : ""), agregados ? "ok" : "err");
       } catch (e) {
+        importandoPersonal = false;
         console.warn("Error import Excel:", e);
         toast("No se pudo leer el Excel: " + (e && e.message ? e.message : e), "err");
       }
