@@ -1,4 +1,4 @@
-﻿const CACHE = "scem-eventos-masivos-v26";
+﻿const CACHE = "scem-eventos-masivos-v27";
 const ASSETS = [
   "./",
   "./index.html",

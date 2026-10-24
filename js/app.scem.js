@@ -259,10 +259,24 @@
     return readRows("personal");
   }
 
-  function funcOptionsHTML(selected) {
+  function idsAsignados(excepto) {
+    const set = {};
+    $$("[data-func-group]").forEach(function (group) {
+      if (group === excepto) return;
+      group.querySelectorAll("input:checked").forEach(function (c) { set[c.value] = true; });
+    });
+    return set;
+  }
+
+  function funcOptionsHTML(selected, groupEl) {
     const persons = personalItems();
     if (!persons.length) return '<div class="hint" style="margin:0">Agregue personal desplegado para asignarlo aquí.</div>';
-    return persons.map(function (p) {
+    const usados = idsAsignados(groupEl);
+    const visibles = persons.filter(function (p) {
+      return selected.indexOf(p.id) >= 0 || !usados[p.id];
+    });
+    if (!visibles.length) return '<div class="hint" style="margin:0">Todo el personal ya está asignado en otro equipo o puesto.</div>';
+    return visibles.map(function (p) {
       const checked = selected.indexOf(p.id) >= 0 ? " checked" : "";
       const lbl = (p.nombre || "(sin nombre)") + (p.cargo ? " · " + (CARGO_LABEL[p.cargo] || p.cargo) : "");
       return '<label><input type="checkbox" value="' + esc(p.id) + '"' + checked + "> " + esc(lbl) + "</label>";
@@ -272,7 +286,7 @@
   function refreshFuncionarios() {
     $$("[data-func-group]").forEach(function (group) {
       const checked = Array.prototype.map.call(group.querySelectorAll("input:checked"), function (c) { return c.value; });
-      group.innerHTML = funcOptionsHTML(checked);
+      group.innerHTML = funcOptionsHTML(checked, group);
     });
   }
 
@@ -2008,8 +2022,12 @@
     $("btnAddRecurso").addEventListener("click", function () { addRow("recursos"); });
     $("btnAddEquipo").addEventListener("click", function () { addRow("equipos"); });
     $("btnAddPuesto").addEventListener("click", function () { addRow("puestos"); });
-    $("personalList").addEventListener("input", function () { refreshFuncionarios(); });
-    $("personalList").addEventListener("change", function () { refreshFuncionarios(); });
+  document.addEventListener("change", function (e) {
+    if (e.target && e.target.closest && e.target.closest("[data-func-group]")) {
+      refreshFuncionarios();
+    }
+  });
+    $$("[data-func-group]").forEach ? null : 0;
 
     $("btnGuardar").addEventListener("click", guardar);
     $("btnVerInforme").addEventListener("click", verInformeActual);
